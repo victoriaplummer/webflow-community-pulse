@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Dashboard } from '../components/Dashboard';
+---
+
+<Layout title="Dashboard">
+  <div class="container py-6">
+    <Dashboard client:load />
+  </div>
+</Layout>

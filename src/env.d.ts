@@ -1,0 +1,9 @@
+/* eslint-disable @typescript-eslint/no-empty-interface */
+type Runtime = import("@astrojs/cloudflare").Runtime<Env>;
+type User = import("./db/schema").User;
+
+declare namespace App {
+  interface Locals extends Runtime {
+    user?: User;
+  }
+}

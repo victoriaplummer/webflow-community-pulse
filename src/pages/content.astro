@@ -1,0 +1,14 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { ContentBrowser } from '../components/ContentBrowser';
+import { BackfillPanel } from '../components/BackfillPanel';
+---
+
+<Layout title="Content Browser">
+  <div class="container py-6 space-y-6">
+    <ContentBrowser client:load />
+    <div class="grid gap-4 md:grid-cols-2">
+      <BackfillPanel client:load />
+    </div>
+  </div>
+</Layout>

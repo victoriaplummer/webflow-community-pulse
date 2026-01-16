@@ -1,0 +1,91 @@
+---
+import "../styles/globals.css";
+
+interface Props {
+  title?: string;
+}
+
+const { title = "Dashboard" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Community Signal & Opportunity Monitor" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}/favicon.svg`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} | Community Pulse</title>
+  </head>
+  <body class="min-h-screen bg-background font-sans antialiased">
+    <div class="relative flex min-h-screen flex-col">
+      <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div class="container flex h-14 items-center">
+          <div class="mr-4 flex">
+            <a href="/pulse" class="mr-6 flex items-center space-x-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="h-6 w-6"
+              >
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+              <span class="font-bold">Community Pulse</span>
+            </a>
+            <nav class="flex items-center space-x-6 text-sm font-medium">
+              <a
+                href="/pulse"
+                class="transition-colors hover:text-foreground/80 text-foreground/60"
+              >
+                Dashboard
+              </a>
+              <a
+                href="/pulse/insights"
+                class="transition-colors hover:text-foreground/80 text-foreground/60"
+              >
+                Insights
+              </a>
+              <a
+                href="/pulse/content"
+                class="transition-colors hover:text-foreground/80 text-foreground/60"
+              >
+                Content
+              </a>
+              <a
+                href="/pulse/contributors"
+                class="transition-colors hover:text-foreground/80 text-foreground/60"
+              >
+                Contributors
+              </a>
+              <a
+                href="/pulse/roundups"
+                class="transition-colors hover:text-foreground/80 text-foreground/60"
+              >
+                Roundups
+              </a>
+            </nav>
+          </div>
+        </div>
+      </header>
+      <main class="flex-1">
+        <slot />
+      </main>
+      <footer class="border-t py-6 md:py-0">
+        <div class="container flex flex-col items-center justify-between gap-4 md:h-14 md:flex-row">
+          <p class="text-center text-sm leading-loose text-muted-foreground md:text-left">
+            Community Signal & Opportunity Monitor - Internal Tool
+          </p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

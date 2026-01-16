@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { RoundupManager } from '../components/RoundupManager';
+---
+
+<Layout title="Roundups">
+  <div class="container py-6">
+    <RoundupManager client:load />
+  </div>
+</Layout>

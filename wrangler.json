@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "webflow-community-pulse",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2025-04-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "community-pulse-db",
+      "database_id": "local",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "vars": {
+    "ENVIRONMENT": "development"
+  },
+  "triggers": {
+    "crons": ["*/30 * * * *"]
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1768414300362,
+      "tag": "0000_safe_sabretooth",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1768415977778,
+      "tag": "0001_mixed_tomas",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1768416919302,
+      "tag": "0002_wet_killer_shrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1768417262309,
+      "tag": "0003_graceful_sharon_ventura",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1768417778548,
+      "tag": "0004_clammy_ogun",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1768425288042,
+      "tag": "0005_parallel_bill_hollister",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1768427775184,
+      "tag": "0006_smart_reptil",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1768430514868,
+      "tag": "0007_perfect_ultron",
+      "breakpoints": true
+    }
+  ]
+}

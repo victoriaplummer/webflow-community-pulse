@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { InsightsTab } from '../components/InsightsTab';
+---
+
+<Layout title="Insights">
+  <div class="container py-6">
+    <InsightsTab client:load />
+  </div>
+</Layout>
