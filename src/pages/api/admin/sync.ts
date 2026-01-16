@@ -80,24 +80,75 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
       let inserted = 0;
 
-      // Insert in batches to avoid memory issues
-      const batchSize = 100;
-      for (let i = 0; i < tableData.length; i += batchSize) {
-        const batch = tableData.slice(i, i + batchSize);
+      // Filter out records that already exist for accurate counting
+      let recordsToInsert = tableData;
 
+      if (conflictColumns.length > 0) {
         try {
-          // Use raw SQL for ON CONFLICT DO NOTHING since Drizzle's support varies
-          for (const row of batch) {
-            try {
-              await db.insert(table).values(row).onConflictDoNothing();
-              inserted++;
-            } catch (err) {
-              // Row may already exist or have constraint violation, skip it
-              console.log(`Skipped row in ${tableName}:`, err);
+          // Build condition to check for existing records
+          // For composite keys like (platform, platform_id)
+          if (conflictColumns.length === 2 && conflictColumns.includes("platform") && conflictColumns.includes("platform_id")) {
+            // Query for existing platform/platform_id combinations
+            const existingRecords = await db
+              .select({
+                platform: table.platform,
+                platformId: table.platformId,
+              })
+              .from(table);
+
+            // Create a Set of existing combinations for fast lookup
+            const existingSet = new Set(
+              existingRecords.map(r => `${r.platform}:${r.platformId}`)
+            );
+
+            // Filter to only new records
+            recordsToInsert = tableData.filter(record => {
+              const key = `${record.platform}:${record.platformId}`;
+              return !existingSet.has(key);
+            });
+          } else if (conflictColumns.includes("id")) {
+            // Query for existing IDs
+            const ids = tableData.map(r => r.id).filter(Boolean);
+            if (ids.length > 0) {
+              const existingRecords = await db
+                .select({ id: table.id })
+                .from(table)
+                .where(sql`${table.id} IN ${sql.raw(`(${ids.join(',')})`)}`)
+                .all();
+
+              const existingIds = new Set(existingRecords.map(r => r.id));
+              recordsToInsert = tableData.filter(record => !existingIds.has(record.id));
             }
           }
-        } catch (batchError) {
-          console.error(`Batch error in ${tableName}:`, batchError);
+
+          console.log(`${tableName}: ${recordsToInsert.length} new records out of ${tableData.length} total`);
+        } catch (checkErr) {
+          console.error(`Error checking existing records in ${tableName}:`, checkErr);
+          // Fall back to inserting all with conflict handling
+          recordsToInsert = tableData;
+        }
+      }
+
+      // Use batch INSERT for much better performance
+      // Drizzle supports passing arrays to .values() for multi-row inserts
+      if (recordsToInsert.length > 0) {
+        try {
+          await db.insert(table).values(recordsToInsert);
+          inserted = recordsToInsert.length;
+        } catch (err) {
+          console.error(`Batch insert error in ${tableName}:`, err);
+          // Fallback: try smaller batches if full batch fails
+          const batchSize = 50;
+          for (let i = 0; i < recordsToInsert.length; i += batchSize) {
+            const batch = recordsToInsert.slice(i, i + batchSize);
+            try {
+              await db.insert(table).values(batch);
+              inserted += batch.length;
+            } catch (batchErr) {
+              console.error(`Sub-batch error in ${tableName} at position ${i}:`, batchErr);
+              // Continue with next batch
+            }
+          }
         }
       }
 
