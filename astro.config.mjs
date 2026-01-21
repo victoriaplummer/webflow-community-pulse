@@ -5,16 +5,21 @@ import tailwind from "@astrojs/tailwind";
 
 // Use Webflow Cloud environment variables for base and assets
 // BASE_URL = mount path (e.g., /pulse)
-// ASSETS_PREFIX = worker URL for static assets
+// ASSETS_PREFIX = worker URL for static assets (full URL with https://)
 const base = process.env.BASE_URL || "/pulse";
-const assetsPrefix = process.env.ASSETS_PREFIX || base;
+const assetsPrefix = process.env.ASSETS_PREFIX;
+
+console.log("[Astro Config] BASE_URL:", process.env.BASE_URL);
+console.log("[Astro Config] ASSETS_PREFIX:", process.env.ASSETS_PREFIX);
+console.log("[Astro Config] Using base:", base);
+console.log("[Astro Config] Using assetsPrefix:", assetsPrefix);
 
 // https://astro.build/config
 export default defineConfig({
   base,
-  build: {
+  build: assetsPrefix ? {
     assetsPrefix,
-  },
+  } : {},
   output: "server",
   adapter: cloudflare({
     platformProxy: {
@@ -28,6 +33,17 @@ export default defineConfig({
     }),
   ],
   vite: {
+    base: assetsPrefix || base,
+    build: {
+      rollupOptions: {
+        output: {
+          // Ensure assets use the correct public path
+          assetFileNames: '_astro/[name].[hash][extname]',
+          chunkFileNames: '_astro/[name].[hash].js',
+          entryFileNames: '_astro/[name].[hash].js',
+        },
+      },
+    },
     resolve: {
       // Use react-dom/server.edge instead of react-dom/server.browser for React 19.
       // Without this, MessageChannel from node:worker_threads needs to be polyfilled.
