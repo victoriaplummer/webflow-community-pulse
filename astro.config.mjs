@@ -4,13 +4,14 @@ import react from "@astrojs/react";
 import tailwind from "@astrojs/tailwind";
 
 // Use Webflow Cloud environment variables for base and assets
+// According to Webflow Cloud docs, use import.meta.env not process.env
 // BASE_URL = mount path (e.g., /pulse)
 // ASSETS_PREFIX = worker URL for static assets (full URL with https://)
-const base = process.env.BASE_URL || "/pulse";
-const assetsPrefix = process.env.ASSETS_PREFIX;
+const base = import.meta.env.BASE_URL || "/pulse";
+const assetsPrefix = import.meta.env.ASSETS_PREFIX;
 
-console.log("[Astro Config] BASE_URL:", process.env.BASE_URL);
-console.log("[Astro Config] ASSETS_PREFIX:", process.env.ASSETS_PREFIX);
+console.log("[Astro Config] BASE_URL:", import.meta.env.BASE_URL);
+console.log("[Astro Config] ASSETS_PREFIX:", import.meta.env.ASSETS_PREFIX);
 console.log("[Astro Config] Using base:", base);
 console.log("[Astro Config] Using assetsPrefix:", assetsPrefix);
 
