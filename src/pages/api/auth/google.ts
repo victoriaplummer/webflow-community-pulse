@@ -15,8 +15,10 @@ export const GET: APIRoute = async ({ locals, url }) => {
     );
   }
 
-  // Build redirect URI from current URL
-  const redirectUri = `${url.origin}/pulse/api/auth/callback`;
+  // Build redirect URI from custom domain if available, otherwise use current origin
+  // In production, this should be your custom domain (e.g., https://yoursite.com)
+  const customDomain = env.CUSTOM_DOMAIN || url.origin;
+  const redirectUri = `${customDomain}/pulse/api/auth/callback`;
 
   const google = createGoogleClient(clientId, clientSecret, redirectUri);
 
