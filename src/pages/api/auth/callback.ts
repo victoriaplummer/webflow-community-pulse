@@ -68,7 +68,13 @@ export const GET: APIRoute = async ({ locals, url, request }) => {
   }
 
   try {
-    const redirectUri = `${url.origin}/pulse/api/auth/callback`;
+    // Build redirect URI - must match what was sent in the authorization request
+    const host = request.headers.get("host") || url.host;
+    const protocol = request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "");
+    const redirectUri = `${protocol}://${host}/pulse/api/auth/callback`;
+
+    console.log("OAuth callback redirect URI:", redirectUri);
+
     const google = createGoogleClient(clientId, clientSecret, redirectUri);
 
     // Exchange code for tokens with PKCE code verifier

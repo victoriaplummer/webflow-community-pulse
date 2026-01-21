@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { generateCodeVerifier, generateState } from "arctic";
 import { createGoogleClient } from "../../../lib/auth";
 
-export const GET: APIRoute = async ({ locals, url }) => {
+export const GET: APIRoute = async ({ locals, url, request }) => {
   const env = locals.runtime.env;
 
   const clientId = env.GOOGLE_CLIENT_ID;
@@ -15,10 +15,13 @@ export const GET: APIRoute = async ({ locals, url }) => {
     );
   }
 
-  // Build redirect URI from custom domain if available, otherwise use current origin
-  // In production, this should be your custom domain (e.g., https://yoursite.com)
-  const customDomain = env.CUSTOM_DOMAIN || url.origin;
-  const redirectUri = `${customDomain}/pulse/api/auth/callback`;
+  // Build redirect URI - check for custom domain first, then fall back to origin
+  // In Workers, url.origin might be the Worker URL even when accessed via custom domain
+  const host = request.headers.get("host") || url.host;
+  const protocol = request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "");
+  const redirectUri = `${protocol}://${host}/pulse/api/auth/callback`;
+
+  console.log("OAuth redirect URI:", redirectUri);
 
   const google = createGoogleClient(clientId, clientSecret, redirectUri);
 
