@@ -5,6 +5,7 @@ import { createArcadeClient, AuthorizationRequiredError } from "../../lib/arcade
 import { isWebflowRelated, getSubreddits } from "../../lib/reddit";
 import { analyzeContent } from "../../lib/claude";
 import { eq, and } from "drizzle-orm";
+import { invalidateAuthorCaches, invalidateContentCaches } from "../../lib/cache";
 
 // Decode HTML entities in text
 function decodeHtmlEntities(text: string): string {
@@ -144,16 +145,35 @@ export const POST: APIRoute = async ({ locals }) => {
                   firstSeen: now,
                   lastSeen: now,
                   postCount: 1,
+                  isWebflowStaff: false,
+                  subreddits: JSON.stringify([post.subreddit]),
                 })
                 .returning();
               authorId = newAuthor[0].id;
             } else {
               authorId = authorRecord[0].id;
+
+              // Parse and update subreddits array
+              let subredditsList: string[] = [];
+              if (authorRecord[0].subreddits) {
+                try {
+                  subredditsList = JSON.parse(authorRecord[0].subreddits);
+                } catch (e) {
+                  subredditsList = [];
+                }
+              }
+
+              // Add subreddit if not already in the list
+              if (!subredditsList.includes(post.subreddit)) {
+                subredditsList.push(post.subreddit);
+              }
+
               await db
                 .update(authors)
                 .set({
                   lastSeen: now,
                   postCount: authorRecord[0].postCount + 1,
+                  subreddits: JSON.stringify(subredditsList),
                 })
                 .where(eq(authors.id, authorId));
             }
@@ -165,7 +185,7 @@ export const POST: APIRoute = async ({ locals }) => {
             // Analyze content with Claude
             const contentText = `${postTitle}\n\n${postBody}`;
             const webflowRelated =
-              subreddit === "webflow" || isWebflowRelated(contentText);
+              post.subreddit === "webflow" || isWebflowRelated(contentText);
 
             // Get flair from post
             const postFlair = post.link_flair_text || post.flair || null;
@@ -194,7 +214,7 @@ export const POST: APIRoute = async ({ locals }) => {
               analysis = await analyzeContent(anthropicKey, {
                 title: postTitle,
                 body: postBody || "(link post)",
-                subreddit,
+                subreddit: post.subreddit,
                 flair: postFlair,
               });
             }
@@ -208,8 +228,8 @@ export const POST: APIRoute = async ({ locals }) => {
                 type: "post",
                 title: postTitle,
                 body: postBody || "",
-                url: post.url || `https://reddit.com${post.permalink}`,
-                subreddit,
+                url: `https://reddit.com${post.permalink}`,
+                subreddit: post.subreddit,
                 flair: postFlair,
                 authorId,
                 createdAt: Math.floor(post.created_utc),
@@ -286,6 +306,16 @@ export const POST: APIRoute = async ({ locals }) => {
 
             results.processed++;
             results.subreddits[subreddit]++;
+
+            // Invalidate caches for this author, content, and subreddits list
+            const cache = locals.runtime.env.CACHE;
+            if (cache) {
+              await Promise.all([
+                invalidateAuthorCaches(cache, authorId),
+                invalidateContentCaches(cache),
+                cache.delete("subreddits:list"),
+              ]);
+            }
           } catch (postError) {
             console.error(`Error processing post ${post.id}:`, postError);
             results.errors++;

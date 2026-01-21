@@ -201,14 +201,14 @@ export const POST: APIRoute = async ({ locals, request }) => {
           // - Primary subreddit (webflow): always analyze
           // - Other subreddits: only analyze if analyzeAll is explicitly set
           // This makes backfill FAST - use the analyze script to analyze later
-          const isPrimarySubreddit = options.subreddit.toLowerCase() === "webflow";
+          const isPrimarySubreddit = post.subreddit.toLowerCase() === "webflow";
           const shouldAnalyze = isPrimarySubreddit || options.analyzeAll;
 
           if (shouldAnalyze) {
             analysis = await analyzeContent(anthropicKey, {
               title: postTitle,
               body: postBody || "(link post)",
-              subreddit: options.subreddit,
+              subreddit: post.subreddit,
               flair: postFlair,
             });
           }
@@ -219,8 +219,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
             type: "post",
             title: postTitle,
             body: postBody || "",
-            url: post.url || `https://reddit.com${post.permalink}`,
-            subreddit: options.subreddit,
+            url: `https://reddit.com${post.permalink}`,
+            subreddit: post.subreddit,
             flair: postFlair,
             authorId,
             createdAt: Math.floor(post.created_utc),

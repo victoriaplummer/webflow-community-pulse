@@ -1,0 +1,17 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { ContributorProfile } from '../../components/ContributorProfile';
+
+const { id } = Astro.params;
+const authorId = parseInt(id || "", 10);
+
+if (isNaN(authorId)) {
+  return Astro.redirect('/pulse/contributors');
+}
+---
+
+<Layout title="Contributor Profile">
+  <div class="container py-6">
+    <ContributorProfile client:load authorId={authorId} />
+  </div>
+</Layout>

@@ -1,10 +1,12 @@
 import type { APIRoute } from "astro";
 import { getDb } from "../../db/getDb";
 import { authors, contentItems } from "../../db/schema";
-import { eq, desc, sql, and, gte } from "drizzle-orm";
+import { eq, desc, sql, and, gte, like } from "drizzle-orm";
+import { cached, CacheKeys, CacheTTL } from "../../lib/cache";
 
 export const GET: APIRoute = async ({ locals, url }) => {
   const db = getDb(locals);
+  const cache = locals.runtime.env.CACHE;
 
   // Parse query parameters
   const sort = url.searchParams.get("sort") || "score"; // score, posts, recent
@@ -13,8 +15,31 @@ export const GET: APIRoute = async ({ locals, url }) => {
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
   const offset = parseInt(url.searchParams.get("offset") || "0");
   const risers = url.searchParams.get("risers") === "true"; // Show rising contributors
+  const search = url.searchParams.get("search");
+  const subreddit = url.searchParams.get("subreddit");
+  const isStaff = url.searchParams.get("is_staff") === "true";
+  const multiSubreddit = url.searchParams.get("multi_subreddit") === "true";
 
   try {
+    // Generate cache key from all parameters
+    const cacheKey = CacheKeys.authors({
+      sort,
+      platform: platform || undefined,
+      search: search || undefined,
+      subreddit: subreddit || undefined,
+      isStaff,
+      multiSubreddit,
+      risers,
+      limit,
+      offset,
+    });
+
+    // Use cached wrapper to get or compute result
+    const result = await cached(
+      cache,
+      cacheKey,
+      async () => {
+        // This is the existing query logic
     // Build conditions
     const conditions = [];
 
@@ -24,6 +49,34 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
     if (minPosts > 1) {
       conditions.push(gte(authors.postCount, minPosts));
+    }
+
+    // Add new filter conditions
+    if (search) {
+      conditions.push(like(authors.username, `%${search}%`));
+    }
+
+    if (isStaff) {
+      conditions.push(eq(authors.isWebflowStaff, true));
+    }
+
+    if (subreddit && subreddit !== "all") {
+      // Filter authors who have posted in this subreddit
+      conditions.push(sql`EXISTS (
+        SELECT 1 FROM ${contentItems}
+        WHERE ${contentItems.authorId} = ${authors.id}
+        AND ${contentItems.subreddit} = ${subreddit}
+      )`);
+    }
+
+    if (multiSubreddit) {
+      // Only return authors who have posted/commented in multiple subreddits
+      // Compute this dynamically from contentItems instead of relying on authors.subreddits
+      conditions.push(sql`(
+        SELECT COUNT(DISTINCT ${contentItems.subreddit})
+        FROM ${contentItems}
+        WHERE ${contentItems.authorId} = ${authors.id}
+      ) > 1`);
     }
 
     // Calculate contributor score if needed
@@ -74,6 +127,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
         highQualityCount: authors.highQualityCount,
         totalEngagement: authors.totalEngagement,
         contributorScore: authors.contributorScore,
+        isWebflowStaff: authors.isWebflowStaff,
+        subreddits: authors.subreddits,
       })
       .from(authors)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
@@ -103,22 +158,65 @@ export const GET: APIRoute = async ({ locals, url }) => {
           .orderBy(desc(contentItems.createdAt))
           .limit(5);
 
+        // Get all distinct subreddits this author has posted/commented in
+        const subredditsData = await db
+          .select({
+            subreddit: contentItems.subreddit,
+          })
+          .from(contentItems)
+          .where(eq(contentItems.authorId, author.id))
+          .groupBy(contentItems.subreddit);
+
+        const subredditsList: string[] = subredditsData
+          .map((s) => s.subreddit)
+          .filter((s): s is string => s !== null);
+
+        // Get comment counts by subreddit
+        const commentStats = await db
+          .select({
+            subreddit: contentItems.subreddit,
+            commentCount: sql<number>`count(*)`,
+          })
+          .from(contentItems)
+          .where(
+            and(
+              eq(contentItems.authorId, author.id),
+              eq(contentItems.type, "comment")
+            )
+          )
+          .groupBy(contentItems.subreddit);
+
+        // Create comment count map by subreddit
+        const commentCountsBySubreddit: Record<string, number> = {};
+        commentStats.forEach((stat) => {
+          if (stat.subreddit) {
+            commentCountsBySubreddit[stat.subreddit] = stat.commentCount;
+          }
+        });
+
         return {
           ...author,
+          subredditsList,
+          commentCountsBySubreddit,
           recentPosts,
         };
       })
     );
 
-    return Response.json({
-      authors: authorsWithActivity,
-      pagination: {
-        total: countResult[0].count,
-        limit,
-        offset,
-        hasMore: offset + authorList.length < countResult[0].count,
+        return {
+          authors: authorsWithActivity,
+          pagination: {
+            total: countResult[0].count,
+            limit,
+            offset,
+            hasMore: offset + authorList.length < countResult[0].count,
+          },
+        };
       },
-    });
+      { ttl: CacheTTL.MEDIUM } // Cache for 5 minutes
+    );
+
+    return Response.json(result);
   } catch (error) {
     console.error("Authors fetch error:", error);
     return Response.json(

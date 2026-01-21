@@ -130,7 +130,7 @@ async function runIngestion(db: ReturnType<typeof getDb>, env: Record<string, st
           const postTitle = decodeHtmlEntities(post.title);
           const postBody = post.selftext || "";
           const contentText = `${postTitle}\n\n${postBody}`;
-          const webflowRelated = subreddit === "webflow" || isWebflowRelated(contentText);
+          const webflowRelated = post.subreddit === "webflow" || isWebflowRelated(contentText);
           const postFlair = post.link_flair_text || post.flair || null;
 
           let analysis = {
@@ -155,7 +155,7 @@ async function runIngestion(db: ReturnType<typeof getDb>, env: Record<string, st
             analysis = await analyzeContent(anthropicKey, {
               title: postTitle,
               body: postBody || "(link post)",
-              subreddit,
+              subreddit: post.subreddit,
               flair: postFlair,
             });
           }
@@ -168,8 +168,8 @@ async function runIngestion(db: ReturnType<typeof getDb>, env: Record<string, st
               type: "post",
               title: postTitle,
               body: postBody || "",
-              url: post.url || `https://reddit.com${post.permalink}`,
-              subreddit,
+              url: `https://reddit.com${post.permalink}`,
+              subreddit: post.subreddit,
               flair: postFlair,
               authorId,
               createdAt: Math.floor(post.created_utc),

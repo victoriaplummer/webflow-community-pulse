@@ -1,0 +1,242 @@
+# Reddit AutoModerator Configuration for r/webflow
+# Copy the relevant sections to your subreddit's AutoMod config
+
+# These rules REMOVE posts that should be comments in weekly threads instead.
+# Users are directed to post in the appropriate weekly thread.
+
+# ============================================================================
+# FEEDBACK FRIDAY - Remove feedback requests (should be comments in thread)
+# ============================================================================
+---
+type: submission
+title (includes-word): ["feedback", "review", "thoughts", "rate", "critique", "opinions", "roast"]
+body+title (includes): ["my site", "my website", "my portfolio", "my project", "my design", "what do you think", "how does this look", "how did I do", "thoughts on", "feedback on"]
+action: remove
+action_reason: "Feedback request - redirect to Feedback Friday"
+comment: |
+    Hi u/{{author}},
+
+    Thank you for sharing your work! We've removed this post because **feedback requests should be posted in our weekly Feedback Friday megathread** to keep the subreddit organized and ensure you get quality responses.
+
+    **Where to post:** Look for this week's "Feedback Friday" thread (pinned every Friday) and share your project there with:
+    - A link to your site
+    - Specific areas you want feedback on
+    - Any context about the project goals
+
+    **Exception:** If this is a completed showcase (not requesting feedback), please repost with a title like "Showcase: [Project Description]" and focus on what you built rather than asking for opinions.
+
+    Thanks for understanding!
+
+---
+# Feedback requests with "brutal" in titles
+type: submission
+title (includes-word): ["brutal", "honest", "harsh"]
+body+title (includes): ["feedback", "thoughts", "review", "critique"]
+action: remove
+action_reason: "Feedback request - redirect to Feedback Friday"
+comment: |
+    Hi u/{{author}},
+
+    Thank you for sharing! We've removed this post because **feedback requests belong in our weekly Feedback Friday megathread**.
+
+    **Where to post:** Look for this week's "Feedback Friday" thread (pinned every Friday) and share your project there. You'll get plenty of honest feedback from the community!
+
+    Thanks for understanding!
+
+---
+# Portfolio/agency website feedback requests
+type: submission
+title+body (includes-word): ["portfolio", "agency"]
+title+body (includes): ["feedback", "thoughts", "review", "what do you think", "how is", "how does"]
+action: remove
+action_reason: "Feedback request - redirect to Feedback Friday"
+comment: |
+    Hi u/{{author}},
+
+    Thank you for sharing your portfolio/agency site! We've removed this post because **feedback requests should be posted in our weekly Feedback Friday megathread**.
+
+    **Where to post:** Look for this week's "Feedback Friday" thread (pinned every Friday).
+
+    Thanks for understanding!
+
+# ============================================================================
+# WEEKLY HIRING THREAD - Remove job posts (should be comments in thread)
+# ============================================================================
+---
+# Job postings - employers hiring
+type: submission
+title (includes-word): ["hiring"]
+action: remove
+action_reason: "Hiring post - redirect to Weekly Hiring Thread"
+comment: |
+    Hi u/{{author}},
+
+    We've removed this post because **job postings belong in our Weekly Hiring Thread** to keep the subreddit organized.
+
+    **Where to post:** Look for this week's "Weekly Hiring Thread" (pinned every Monday) and share your opportunity there.
+
+    **What to include:**
+    - Role title and type (freelance/full-time/contract)
+    - Required skills
+    - Location/remote policy
+    - Rate/salary range (if possible)
+
+    Thanks for understanding!
+
+---
+# Looking for developer/designer posts
+type: submission
+title (includes): ["looking for", "need a", "need an", "seeking", "wanted"]
+body+title (includes-word): ["developer", "designer", "freelancer", "contractor", "dev", "agency"]
+action: remove
+action_reason: "Hiring post - redirect to Weekly Hiring Thread"
+comment: |
+    Hi u/{{author}},
+
+    We've removed this post because **hiring requests belong in our Weekly Hiring Thread**.
+
+    **Where to post:** Look for this week's "Weekly Hiring Thread" (pinned every Monday).
+
+    Thanks for understanding!
+
+---
+# Contractor/freelance wanted posts
+type: submission
+title+body (regex, includes): ['contractor (needed|wanted)', 'freelancer (needed|wanted)', 'looking to hire']
+action: remove
+action_reason: "Hiring post - redirect to Weekly Hiring Thread"
+comment: |
+    Hi u/{{author}},
+
+    We've removed this post because **hiring requests belong in our Weekly Hiring Thread**.
+
+    **Where to post:** Look for this week's "Weekly Hiring Thread" (pinned every Monday).
+
+    Thanks for understanding!
+
+# ============================================================================
+# SELF PROMOTION SUNDAY - Remove self-promo (should be comments in thread)
+# ============================================================================
+---
+# Freelance/Service offers - "I'm available" posts
+type: submission
+title+body (regex, includes): ['(i will|i''ll|i can) (make|build|create|design|fix|help)', 'available for (hire|work|projects)', 'offering (my )?services', 'webflow (expert|specialist|professional) available']
+action: remove
+action_reason: "Service offering - redirect to Self Promotion Sunday"
+comment: |
+    Hi u/{{author}},
+
+    We've removed this post because **service offerings belong in our weekly Self Promotion Sunday megathread**.
+
+    **Where to post:** Look for this week's "Self Promotion Sunday" thread (pinned every Sunday).
+
+    **Alternatives:**
+    - r/forhire for freelance work
+    - Weekly Hiring Thread (Mondays) if you're looking for jobs
+
+    Thanks for understanding!
+
+---
+# Template/Component sales
+type: submission
+title+body (includes): ["for sale", "selling", "% off", "discount", "limited time"]
+~flair_text (full-exact): ["Resource", "Tutorial", "Announcement"]
+action: remove
+action_reason: "Sales/promotion - redirect to Self Promotion Sunday"
+comment: |
+    Hi u/{{author}},
+
+    We've removed this post because **sales and promotional offers belong in our weekly Self Promotion Sunday megathread**.
+
+    **Where to post:** Look for this week's "Self Promotion Sunday" thread (pinned every Sunday).
+
+    **Exception:** If you're sharing a genuinely free resource with no strings attached, please repost with a clear title indicating it's free and use the "Resource" flair.
+
+    Thanks for understanding!
+
+---
+# Tool/App launches (low-effort from new accounts)
+type: submission
+title+body (includes): ["i created", "i built", "i made", "my tool", "my app", "my plugin", "check out"]
+~title+body (includes): ["open source", "tutorial", "how to", "step by step"]
+author:
+    combined_karma: "< 500"
+    account_age: "< 30 days"
+action: remove
+action_reason: "Tool promotion from new account - redirect to Self Promotion Sunday"
+comment: |
+    Hi u/{{author}},
+
+    We've removed this post because **product launches and tool promotions belong in our weekly Self Promotion Sunday megathread**, especially for newer accounts.
+
+    **Where to post:** Look for this week's "Self Promotion Sunday" thread (pinned every Sunday).
+
+    **Exception:** If this is a detailed tutorial or technical deep-dive (not just promoting your tool), please repost with a focus on the educational content and use the "Tutorial" flair.
+
+    Thanks for understanding!
+
+---
+# YouTube/Blog spam (only low-effort channel promotion)
+# Note: Quality tutorials/content are allowed as standalone posts
+type: submission
+domain (includes): ["youtube.com", "youtu.be"]
+title (regex, includes): ['(check out|subscribe|my channel|new video|latest video)', '(?i)(please watch|pls watch)']
+~title (includes): ["tutorial", "how to", "guide", "learn", "showcase"]
+author:
+    combined_karma: "< 200"
+    account_age: "< 14 days"
+action: filter
+action_reason: "Low-effort YouTube spam from new account - review"
+comment: |
+    Hi u/{{author}},
+
+    Your post has been filtered for review. To help us verify this is quality content:
+
+    - Use a descriptive title explaining what you're teaching/showing
+    - Add a comment with key takeaways or summary
+    - Consider adding the "Tutorial" or "Showcase" flair
+
+    A moderator will review shortly. Quality educational content is always welcome!
+
+---
+# Portfolio spam - "hire me" posts
+type: submission
+title+body (regex, includes): ['(hire me|work with me)', 'affordable rates', 'cheap', 'dm me', 'message me']
+action: remove
+action_reason: "Self promotion - redirect to Self Promotion Sunday"
+comment: |
+    Hi u/{{author}},
+
+    We've removed this post because **self-promotion and service offerings belong in our weekly Self Promotion Sunday megathread**.
+
+    **Where to post:** Look for this week's "Self Promotion Sunday" thread (pinned every Sunday).
+
+    Thanks for understanding!
+
+# ============================================================================
+# SPAM PROTECTION (Always remove, regardless of day)
+# ============================================================================
+---
+# Obvious spam - unrelated products
+type: submission
+title+body (includes): ["perplexity ai", "chatgpt pro", "90% off", "95% off", "super promo"]
+~title+body (includes): ["webflow"]
+action: spam
+action_reason: "Unrelated product spam"
+
+---
+# Account selling
+type: submission
+title+body (includes-word): ["account", "balance"]
+title+body (includes): ["for sale", "selling"]
+action: spam
+action_reason: "Account selling prohibited"
+comment: |
+    Selling Webflow accounts violates Webflow's Terms of Service and is not allowed on this subreddit.
+
+---
+# Extremely low-effort offers
+type: submission
+title (regex): ['(i will|i''ll).{0,30}\$\d+']
+action: spam
+action_reason: "Low-effort spam"

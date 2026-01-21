@@ -78,17 +78,43 @@ export const POST: APIRoute = async ({ locals, request }) => {
         return { attempted: tableData.length, inserted: 0, skipped: true };
       }
 
+      // Clean the data FIRST: remove snake_case properties that conflict with camelCase properties
+      // This fixes issues where exports include both platformId and platform_id (null)
+      const cleanedData = tableData.map(record => {
+        const cleaned = { ...record };
+        // Remove problematic snake_case fields if camelCase equivalents exist
+        if ('platformId' in cleaned && 'platform_id' in cleaned) {
+          delete cleaned.platform_id;
+        }
+        if ('authorId' in cleaned && 'author_id' in cleaned) {
+          delete cleaned.author_id;
+        }
+        if ('contentId' in cleaned && 'content_id' in cleaned) {
+          delete cleaned.content_id;
+        }
+        if ('parentId' in cleaned && 'parent_id' in cleaned) {
+          delete cleaned.parent_id;
+        }
+        if ('generationId' in cleaned && 'generation_id' in cleaned) {
+          delete cleaned.generation_id;
+        }
+        if ('roundupId' in cleaned && 'roundup_id' in cleaned) {
+          delete cleaned.roundup_id;
+        }
+        return cleaned;
+      });
+
       let inserted = 0;
 
       // Filter out records that already exist for accurate counting
-      let recordsToInsert = tableData;
+      let recordsToInsert = cleanedData;
 
       if (conflictColumns.length > 0) {
         try {
           // Build condition to check for existing records
-          // For composite keys like (platform, platform_id)
-          if (conflictColumns.length === 2 && conflictColumns.includes("platform") && conflictColumns.includes("platform_id")) {
-            // Query for existing platform/platform_id combinations
+          // For composite keys like (platform, platformId)
+          if (conflictColumns.length === 2 && conflictColumns.includes("platform") && conflictColumns.includes("platformId")) {
+            // Query for existing platform/platformId combinations
             const existingRecords = await db
               .select({
                 platform: table.platform,
@@ -101,14 +127,14 @@ export const POST: APIRoute = async ({ locals, request }) => {
               existingRecords.map(r => `${r.platform}:${r.platformId}`)
             );
 
-            // Filter to only new records
-            recordsToInsert = tableData.filter(record => {
+            // Filter to only new records (use cleanedData since we already cleaned it)
+            recordsToInsert = cleanedData.filter(record => {
               const key = `${record.platform}:${record.platformId}`;
               return !existingSet.has(key);
             });
           } else if (conflictColumns.includes("id")) {
             // Query for existing IDs
-            const ids = tableData.map(r => r.id).filter(Boolean);
+            const ids = cleanedData.map(r => r.id).filter(Boolean);
             if (ids.length > 0) {
               const existingRecords = await db
                 .select({ id: table.id })
@@ -117,20 +143,21 @@ export const POST: APIRoute = async ({ locals, request }) => {
                 .all();
 
               const existingIds = new Set(existingRecords.map(r => r.id));
-              recordsToInsert = tableData.filter(record => !existingIds.has(record.id));
+              recordsToInsert = cleanedData.filter(record => !existingIds.has(record.id));
             }
           }
 
-          console.log(`${tableName}: ${recordsToInsert.length} new records out of ${tableData.length} total`);
+          console.log(`${tableName}: ${recordsToInsert.length} new records out of ${cleanedData.length} total`);
         } catch (checkErr) {
           console.error(`Error checking existing records in ${tableName}:`, checkErr);
           // Fall back to inserting all with conflict handling
-          recordsToInsert = tableData;
+          recordsToInsert = cleanedData;
         }
       }
 
       // Use batch INSERT for much better performance
       // Drizzle supports passing arrays to .values() for multi-row inserts
+      // Note: recordsToInsert is already cleaned of snake_case properties earlier
       if (recordsToInsert.length > 0) {
         try {
           await db.insert(table).values(recordsToInsert);
@@ -171,7 +198,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
         "authors",
         data.authors as Record<string, unknown>[],
         authors,
-        ["platform", "platform_id"]
+        ["platform", "platformId"]  // Use camelCase to match actual property names
       );
     }
 
@@ -181,7 +208,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
         "content_items",
         data.content_items as Record<string, unknown>[],
         contentItems,
-        ["platform", "platform_id"]
+        ["platform", "platformId"]  // Use camelCase to match actual property names
       );
     }
 

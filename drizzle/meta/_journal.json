@@ -57,6 +57,13 @@
       "when": 1768430514868,
       "tag": "0007_perfect_ultron",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1768994895383,
+      "tag": "0008_lean_madame_web",
+      "breakpoints": true
     }
   ]
 }

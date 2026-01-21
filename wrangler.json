@@ -19,6 +19,20 @@
       "migrations_dir": "drizzle"
     }
   ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "local",
+      "preview_id": "local"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "DATA_SYNC",
+      "bucket_name": "community-pulse-sync",
+      "preview_bucket_name": "community-pulse-sync-preview"
+    }
+  ],
   "vars": {
     "ENVIRONMENT": "development"
   },

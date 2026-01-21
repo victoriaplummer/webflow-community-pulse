@@ -16,10 +16,15 @@ export const authors = sqliteTable(
     highQualityCount: integer("high_quality_count").notNull().default(0),
     totalEngagement: integer("total_engagement").notNull().default(0),
     contributorScore: real("contributor_score").notNull().default(0),
+    isWebflowStaff: integer("is_webflow_staff", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    subreddits: text("subreddits"), // JSON array of subreddit names
   },
   (table) => [
     uniqueIndex("authors_platform_id_idx").on(table.platform, table.platformId),
     index("authors_score_idx").on(table.contributorScore),
+    index("authors_webflow_staff_idx").on(table.isWebflowStaff),
   ]
 );
 
