@@ -6,6 +6,15 @@ interface Props {
 }
 
 const { title = "Dashboard" } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+// Helper to check if nav link is active
+const isActive = (path: string) => {
+  if (path === "/pulse" || path === "/pulse/") {
+    return currentPath === "/pulse" || currentPath === "/pulse/";
+  }
+  return currentPath.startsWith(path);
+};
 ---
 
 <!doctype html>
@@ -21,12 +30,14 @@ const { title = "Dashboard" } = Astro.props;
     <meta name="generator" content={Astro.generator} />
     <title>{title} | Community Pulse</title>
   </head>
-  <body class="min-h-screen bg-background font-sans antialiased">
+  <body class="min-h-screen">
     <div class="relative flex min-h-screen flex-col">
-      <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div class="container flex h-14 items-center">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="app-header-inner">
           <div class="mr-4 flex">
-            <a href="/pulse" class="mr-6 flex items-center space-x-2">
+            <!-- Logo -->
+            <a href="/pulse" class="app-logo">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -35,40 +46,57 @@ const { title = "Dashboard" } = Astro.props;
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                class="h-6 w-6"
+                class="app-logo-icon"
               >
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
               </svg>
-              <span class="font-bold">Community Pulse</span>
+              <span class="app-logo-text">Community Pulse</span>
             </a>
-            <nav class="flex items-center space-x-6 text-sm font-medium">
+            
+            <!-- Navigation -->
+            <nav class="app-nav">
               <a
                 href="/pulse"
-                class="transition-colors hover:text-foreground/80 text-foreground/60"
+                class:list={[
+                  "app-nav-link",
+                  { "app-nav-link--active": isActive("/pulse") && currentPath === "/pulse" }
+                ]}
               >
                 Dashboard
               </a>
               <a
                 href="/pulse/insights"
-                class="transition-colors hover:text-foreground/80 text-foreground/60"
+                class:list={[
+                  "app-nav-link",
+                  { "app-nav-link--active": isActive("/pulse/insights") }
+                ]}
               >
                 Insights
               </a>
               <a
                 href="/pulse/content"
-                class="transition-colors hover:text-foreground/80 text-foreground/60"
+                class:list={[
+                  "app-nav-link",
+                  { "app-nav-link--active": isActive("/pulse/content") }
+                ]}
               >
                 Content
               </a>
               <a
                 href="/pulse/contributors"
-                class="transition-colors hover:text-foreground/80 text-foreground/60"
+                class:list={[
+                  "app-nav-link",
+                  { "app-nav-link--active": isActive("/pulse/contributors") }
+                ]}
               >
                 Contributors
               </a>
               <a
                 href="/pulse/roundups"
-                class="transition-colors hover:text-foreground/80 text-foreground/60"
+                class:list={[
+                  "app-nav-link",
+                  { "app-nav-link--active": isActive("/pulse/roundups") }
+                ]}
               >
                 Roundups
               </a>
@@ -76,12 +104,16 @@ const { title = "Dashboard" } = Astro.props;
           </div>
         </div>
       </header>
+      
+      <!-- Main Content -->
       <main class="flex-1">
         <slot />
       </main>
-      <footer class="border-t py-6 md:py-0">
-        <div class="container flex flex-col items-center justify-between gap-4 md:h-14 md:flex-row">
-          <p class="text-center text-sm leading-loose text-muted-foreground md:text-left">
+      
+      <!-- Footer -->
+      <footer class="app-footer">
+        <div class="app-footer-inner">
+          <p class="app-footer-text">
             Community Signal & Opportunity Monitor - Internal Tool
           </p>
         </div>

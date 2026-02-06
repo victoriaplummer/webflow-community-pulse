@@ -140,20 +140,44 @@ export const POST: APIRoute = async ({ locals, request }) => {
         expirationTtl: 86400,
       });
 
-      // Process sync (this will be done in background)
-      // For now, do it synchronously - can be optimized with Durable Objects later
-      const results = await processSyncData(locals, payload.version, payload.data, syncKey);
+      // Process sync with error handling for partial success
+      let results;
+      let partialSuccess = false;
+      let errorMessage = null;
 
-      // Update final status
-      status.status = "completed";
-      status.completedAt = Date.now();
-      status.results = results;
+      try {
+        results = await processSyncData(locals, payload.version, payload.data, syncKey);
+        status.status = "completed";
+        status.completedAt = Date.now();
+        status.results = results;
+      } catch (error) {
+        // If we hit subrequest limit or timeout, treat as partial success
+        const errorStr = String(error);
+        if (errorStr.includes("Too many API requests") || errorStr.includes("exceeded")) {
+          partialSuccess = true;
+          errorMessage = "Partial sync - hit Worker limits. Run sync again to continue.";
+          status.status = "partial";
+          status.error = errorMessage;
+        } else {
+          status.status = "failed";
+          status.error = String(error);
+          throw error;
+        }
+      }
+
       await cache.put(`sync:status:${syncKey}`, JSON.stringify(status), {
         expirationTtl: 86400,
       });
 
-      // Clean up R2 object (optional - keep for debugging)
-      // await r2.delete(syncKey);
+      if (partialSuccess) {
+        return Response.json({
+          success: true,
+          partial: true,
+          syncKey,
+          message: errorMessage,
+          note: "Run the sync again with the same data - it will skip duplicates and continue where it left off",
+        });
+      }
 
       return Response.json({
         success: true,
@@ -316,20 +340,6 @@ async function processSyncData(
 
     await updateProgress(tableName, 0);
 
-    // Check if already synced
-    const existingSync = await db
-      .select()
-      .from(seedHistory)
-      .where(
-        sql`${seedHistory.seedName} = ${tableName} AND ${seedHistory.seedVersion} = ${version}`
-      )
-      .limit(1);
-
-    if (existingSync.length > 0) {
-      console.log(`Skipping ${tableName} v${version} - already synced`);
-      return { attempted: tableData.length, inserted: 0, skipped: true };
-    }
-
     // Clean snake_case fields
     const cleanedData = tableData.map((record) => {
       const cleaned = { ...record };
@@ -343,27 +353,39 @@ async function processSyncData(
     });
 
     let inserted = 0;
-    const batchSize = 100;
+    // Very small batch size to avoid:
+    // 1. "too many SQL variables" error (SQLite limit ~999 variables)
+    // 2. Timeout on large batches
+    const batchSize = 5;
 
-    // Process in batches
+    // Process in batches using INSERT OR IGNORE for automatic duplicate handling
     for (let i = 0; i < cleanedData.length; i += batchSize) {
       const batch = cleanedData.slice(i, i + batchSize);
       try {
-        await db.insert(table).values(batch);
+        // Use onConflictDoNothing() to automatically skip duplicates
+        await db.insert(table).values(batch).onConflictDoNothing();
         inserted += batch.length;
-        await updateProgress(tableName, inserted);
+
+        // Only update progress every 100 records to reduce KV writes
+        if (i % 100 === 0) {
+          await updateProgress(tableName, i + batch.length);
+        }
       } catch (err) {
         console.error(`Batch insert error in ${tableName} at position ${i}:`, err);
+        // Try one-by-one as fallback
+        for (const record of batch) {
+          try {
+            await db.insert(table).values([record]).onConflictDoNothing();
+            inserted++;
+          } catch (singleErr) {
+            // Skip this record if it still fails
+            console.error(`Failed to insert record:`, singleErr);
+          }
+        }
       }
     }
 
-    // Record sync in history
-    await db.insert(seedHistory).values({
-      seedName: tableName,
-      seedVersion: version,
-      recordCount: inserted,
-      appliedAt: Math.floor(Date.now() / 1000),
-    });
+    console.log(`${tableName}: Processed ${cleanedData.length} records (duplicates automatically skipped)`);
 
     return { attempted: tableData.length, inserted };
   }

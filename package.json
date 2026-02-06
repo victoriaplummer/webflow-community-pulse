@@ -14,7 +14,9 @@
     "db:studio": "drizzle-kit studio",
     "backfill": "tsx scripts/backfill-all.ts",
     "analyze": "tsx scripts/analyze-all.ts",
-    "sync-to-prod": "tsx scripts/sync-to-prod.ts"
+    "sync": "node scripts/export-and-upload.js --target=production",
+    "sync:local": "node scripts/export-and-upload.js",
+    "sync:direct": "tsx scripts/sync-to-prod.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

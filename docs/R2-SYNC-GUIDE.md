@@ -41,7 +41,7 @@ Create `.env` file:
 ```bash
 # For the export script
 LOCAL_API=http://localhost:4321
-PROD_API=https://your-production-url.com
+PROD_API=https://twirlingtacotales.xyz
 ```
 
 ## Usage
@@ -59,6 +59,7 @@ node scripts/export-and-upload.js --target=production
 ```
 
 What it does:
+
 1. Exports all tables from local database
 2. Downloads the export as JSON
 3. Splits into 10MB chunks
@@ -89,6 +90,7 @@ curl "http://localhost:4321/api/admin/r2-sync?operation=download&exportKey=expor
 #### Step 3: Upload to Production R2
 
 For small files (<10MB):
+
 ```bash
 curl -X POST https://your-prod-url.com/api/admin/r2-sync \
   -H "Content-Type: application/json" \
@@ -98,6 +100,7 @@ curl -X POST https://your-prod-url.com/api/admin/r2-sync \
 For large files (>10MB), use multipart upload:
 
 1. Initialize:
+
 ```bash
 curl -X POST https://your-prod-url.com/api/admin/multipart-upload \
   -H "Content-Type: application/json" \
@@ -108,6 +111,7 @@ curl -X POST https://your-prod-url.com/api/admin/multipart-upload \
 2. Upload chunks (use script or tool like split + curl)
 
 3. Complete:
+
 ```bash
 curl -X POST https://your-prod-url.com/api/admin/multipart-upload \
   -H "Content-Type: application/json" \
@@ -143,22 +147,26 @@ curl "https://your-prod-url.com/api/admin/r2-sync?syncKey=export-123..." \
 ### `/api/admin/r2-sync`
 
 **POST - Operations:**
+
 - `export` - Export current database to R2
 - `upload` - Upload JSON data to R2
 - `sync` - Import data from R2 into database
 
 **GET:**
+
 - `?operation=download&exportKey=...` - Download export file
 - `?syncKey=...` - Check sync status
 
 ### `/api/admin/multipart-upload`
 
 **POST:**
+
 - `action: start` - Initialize multipart upload
 - `action: complete` - Finalize multipart upload
 - `action: abort` - Cancel multipart upload
 
 **PUT:**
+
 - Upload individual chunks (query params: `key`, `uploadId`, `partNumber`)
 
 ## Troubleshooting
@@ -202,6 +210,7 @@ You can list files in R2 and see what's stored:
 ## File Sizes
 
 Typical export sizes:
+
 - 1,000 posts = ~2 MB
 - 10,000 posts = ~20 MB
 - 100,000 posts = ~200 MB
@@ -211,6 +220,7 @@ R2 handles files up to 5TB, so you're covered for massive datasets.
 ## Cost
 
 R2 is extremely cheap:
+
 - Storage: $0.015/GB/month
 - Class A operations (writes): $4.50/million
 - Class B operations (reads): $0.36/million
